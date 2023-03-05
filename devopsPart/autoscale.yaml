@@ -1,0 +1,19 @@
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: app-worker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: app-worker
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Pods
+  pods:
+      metricName: rabbitmq_queue_messages_ready
+      metricSelector:
+        matchLabels:
+          queueName: app-worker
+      targetAverageValue: "5"
