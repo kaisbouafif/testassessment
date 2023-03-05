@@ -1,0 +1,39 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+
+services:
+  - docker:dind
+
+before_script:
+  - docker info
+
+build:
+  stage: build
+  script:
+    - docker build -t myapp .
+
+test:
+  stage: test
+  script:
+    - docker run myapp vendor/bin/phpunit
+
+deploy:
+  stage: deploy
+  script:
+    - docker tag symfony dockydocky007/symfony:$CI_COMMIT_SHA
+    - docker push dockydocky007/myapp:$CI_COMMIT_SHA
+    - docker tag rabbitmq dockydocky007/rabbitmq:$CI_COMMIT_SHA
+    - docker push dockydocky007/rabbitmq:$CI_COMMIT_SHA
+    - kubectl apply -f rabbitmq.yaml
+    - kubectl apply -f symfony.yaml
+  environment:
+    name: dev
+    url: https://myapp.example.com
+  only:
+    - master
